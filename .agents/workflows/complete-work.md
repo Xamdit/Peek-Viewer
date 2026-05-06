@@ -23,6 +23,7 @@
     - `test.sh`: สำหรับ Build และ Run แอปพลิเคชันอัตโนมัติ
     - `save`: สำหรับบันทึกงาน (Git sync)
     - `load`: สำหรับดึงงานล่าสุด
+- **Workflow Integration**: ปรับปรุงคำสั่ง `/push` ให้รัน `/save` อัตโนมัติ เพื่อให้สถานะงานล่าสุดใน `.agents/workflows/complete-work.md` ถูกอัปเดตและ push เสมอ
 
 ## Pending Issues
 - **Icon Customization**: เพิ่มความสามารถในการเปลี่ยน SF Symbol รายตัวสำหรับแต่ละไซต์
