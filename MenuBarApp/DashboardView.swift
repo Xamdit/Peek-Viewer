@@ -278,18 +278,18 @@ struct InstallDetailView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 25) {
-            Text("Docker Installation").font(.title).bold()
+            Text("Tools Installation").font(.title).bold()
             
             VStack(alignment: .leading, spacing: 15) {
                 HStack {
                     Image(systemName: monitor.isDockerRunning ? "checkmark.circle.fill" : "xmark.circle.fill")
                         .foregroundColor(monitor.isDockerRunning ? .green : .red)
-                    Text(monitor.isDockerRunning ? "Docker is available" : "Docker is not detected in your PATH")
+                    Text(monitor.isDockerRunning ? "Docker tools are available" : "Docker CLI not detected in your PATH")
                         .fontWeight(.medium)
                 }
                 
                 if !monitor.isDockerRunning {
-                    Text("We can help you install the Docker CLI using Homebrew. This will only install the command-line tools, which are lightweight.")
+                    Text("We can help you install the Docker CLI and Docker Compose using Homebrew. This will install the standard command-line tools.")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     
@@ -300,7 +300,7 @@ struct InstallDetailView: View {
                                 Text("Installing...")
                             }
                         } else {
-                            Text("Install Docker via Brew")
+                            Text("Install Docker & Compose via Brew")
                         }
                     }
                     .buttonStyle(.borderedProminent)
@@ -328,7 +328,7 @@ struct InstallDetailView: View {
     
     private func installDocker() {
         isInstalling = true
-        installLogs = "Starting brew install docker...\n"
+        installLogs = "Starting brew install docker docker-compose...\n"
         
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/brew")
@@ -336,7 +336,7 @@ struct InstallDetailView: View {
             process.executableURL = URL(fileURLWithPath: "/usr/local/bin/brew")
         }
         
-        process.arguments = ["install", "docker"]
+        process.arguments = ["install", "docker", "docker-compose"]
         
         let pipe = Pipe()
         process.standardOutput = pipe
@@ -393,69 +393,133 @@ struct ContainerDetailView: View {
     @Binding var itemToDelete: Any?
     @Binding var showingDeleteConfirmation: Bool
     
+    @State private var logs: String = ""
+    @State private var logTimer: Timer? = nil
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 25) {
-            HStack(alignment: .top) {
+        VStack(alignment: .leading, spacing: 20) {
+            // Header with Actions
+            HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(container.name)
-                        .font(.title)
-                        .bold()
+                    HStack(spacing: 10) {
+                        Text(container.name)
+                            .font(.title)
+                            .bold()
+                        StateIndicator(state: container.state)
+                    }
                     Text(container.id)
                         .font(.monospaced(.caption)())
                         .foregroundColor(.secondary)
                 }
-                Spacer()
-                StateIndicator(state: container.state).scaleEffect(1.5).padding(.top, 10)
-            }
-            
-            VStack(alignment: .leading, spacing: 15) {
-                InfoRow(label: "Image", value: container.image)
-                InfoRow(label: "Status", value: container.status, valueColor: stateColor)
                 
-                HStack(alignment: .top) {
-                    Text("Ports").foregroundColor(.secondary).frame(width: 100, alignment: .leading)
-                    if container.ports.isEmpty {
-                        Text("No ports mapped").foregroundColor(.secondary).italic()
-                    } else {
-                        VStack(alignment: .leading, spacing: 5) {
-                            ForEach(parsePorts(container.ports), id: \.self) { port in
-                                Button(action: { if let url = URL(string: "http://localhost:\(port)") { NSWorkspace.shared.open(url) } }) {
-                                    HStack(spacing: 4) {
-                                        Text(port).fontWeight(.bold).underline()
-                                        Image(systemName: "arrow.up.right.square").font(.caption2)
-                                    }
-                                    .foregroundColor(.accentColor)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                        }
-                    }
-                    Spacer()
-                }
-            }
-            .padding().background(Color.gray.opacity(0.1)).cornerRadius(12)
-            
-            VStack(alignment: .leading, spacing: 15) {
-                Text("Actions").font(.headline)
-                HStack(spacing: 15) {
-                    ActionButton(title: container.state == .running ? "Stop" : "Start", icon: container.state == .running ? "stop.fill" : "play.fill", color: container.state == .running ? .red : .green) {
+                Spacer()
+                
+                // Actions at the top
+                HStack(spacing: 8) {
+                    ActionButton(title: container.state == .running ? "Stop" : "Start",
+                                 icon: container.state == .running ? "stop.fill" : "play.fill",
+                                 color: container.state == .running ? .red : .green,
+                                 isCompact: true) {
                         monitor.toggleContainer(container)
                     }
-                    ActionButton(title: "Restart", icon: "arrow.clockwise", color: .orange) { monitor.restartContainer(container) }
-                    ActionButton(title: "Remove", icon: "trash.fill", color: .red) {
+                    ActionButton(title: "Restart", icon: "arrow.clockwise", color: .orange, isCompact: true) {
+                        monitor.restartContainer(container)
+                    }
+                    ActionButton(title: "Remove", icon: "trash.fill", color: .red, isCompact: true) {
                         itemToDelete = container
                         showingDeleteConfirmation = true
                     }
                     if let workingDir = container.workingDir {
-                        ActionButton(title: "Finder", icon: "folder.fill", color: .blue) {
+                        ActionButton(title: "Show in Finder", icon: "folder.fill", color: .blue, isCompact: true) {
                             NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: URL(fileURLWithPath: workingDir).path)
                         }
                     }
                 }
             }
-            Spacer()
+            
+            // Info Row
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    InfoRow(label: "Image", value: container.image)
+                    Spacer()
+                    InfoRow(label: "Status", value: container.status, valueColor: stateColor)
+                }
+                
+                if !container.ports.isEmpty {
+                    Divider().padding(.vertical, 2)
+                    HStack(alignment: .top) {
+                        Text("Ports").foregroundColor(.secondary).frame(width: 100, alignment: .leading)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(parsePorts(container.ports), id: \.self) { port in
+                                    Button(action: { if let url = URL(string: "http://localhost:\(port)") { NSWorkspace.shared.open(url) } }) {
+                                        HStack(spacing: 4) {
+                                            Text(port).fontWeight(.bold).underline()
+                                            Image(systemName: "arrow.up.right.square").font(.caption2)
+                                        }
+                                        .foregroundColor(.accentColor)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .padding().background(Color.gray.opacity(0.1)).cornerRadius(12)
+            
+            // Activity Logs
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("Activity Logs").font(.headline)
+                    Spacer()
+                    Button(action: { loadLogs() }) {
+                        Image(systemName: "arrow.clockwise").font(.caption)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .help("Refresh Logs")
+                }
+                
+                ScrollView {
+                    Text(logs.isEmpty ? "Fetching logs..." : logs)
+                        .font(.system(.caption, design: .monospaced))
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .background(Color.black)
+                .cornerRadius(8)
+                .frame(maxHeight: .infinity)
+            }
         }
         .padding(30)
+        .onAppear {
+            loadLogs()
+            startLogTimer()
+        }
+        .onDisappear {
+            stopLogTimer()
+        }
+        .onChange(of: container.id) { _ in
+            loadLogs()
+        }
+    }
+    
+    private func loadLogs() {
+        monitor.fetchLogs(containerId: container.id) { output in
+            self.logs = output
+        }
+    }
+    
+    private func startLogTimer() {
+        logTimer?.invalidate()
+        logTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+            loadLogs()
+        }
+    }
+    
+    private func stopLogTimer() {
+        logTimer?.invalidate()
+        logTimer = nil
     }
     
     var stateColor: Color { container.state == .running ? .green : (container.state == .exited ? .red : .orange) }
@@ -484,8 +548,15 @@ struct NetworkDetailView: View {
     @Binding var showingDeleteConfirmation: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 25) {
-            Text(network.name).font(.title).bold()
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(alignment: .center) {
+                Text(network.name).font(.title).bold()
+                Spacer()
+                ActionButton(title: "Remove Network", icon: "trash.fill", color: .red, isCompact: true) {
+                    itemToDelete = network
+                    showingDeleteConfirmation = true
+                }
+            }
             
             VStack(alignment: .leading, spacing: 15) {
                 InfoRow(label: "ID", value: network.id)
@@ -494,13 +565,6 @@ struct NetworkDetailView: View {
             }
             .padding().background(Color.gray.opacity(0.1)).cornerRadius(12)
             
-            VStack(alignment: .leading, spacing: 15) {
-                Text("Actions").font(.headline)
-                ActionButton(title: "Remove Network", icon: "trash.fill", color: .red) {
-                    itemToDelete = network
-                    showingDeleteConfirmation = true
-                }
-            }
             Spacer()
         }
         .padding(30)
@@ -514,8 +578,15 @@ struct ImageDetailView: View {
     @Binding var showingDeleteConfirmation: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 25) {
-            Text(image.repository).font(.title).bold()
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(alignment: .center) {
+                Text(image.repository).font(.title).bold()
+                Spacer()
+                ActionButton(title: "Remove Image", icon: "trash.fill", color: .red, isCompact: true) {
+                    itemToDelete = image
+                    showingDeleteConfirmation = true
+                }
+            }
             
             VStack(alignment: .leading, spacing: 15) {
                 InfoRow(label: "ID", value: image.id)
@@ -525,13 +596,6 @@ struct ImageDetailView: View {
             }
             .padding().background(Color.gray.opacity(0.1)).cornerRadius(12)
             
-            VStack(alignment: .leading, spacing: 15) {
-                Text("Actions").font(.headline)
-                ActionButton(title: "Remove Image", icon: "trash.fill", color: .red) {
-                    itemToDelete = image
-                    showingDeleteConfirmation = true
-                }
-            }
             Spacer()
         }
         .padding(30)
@@ -572,16 +636,26 @@ struct ActionButton: View {
     var title: String
     var icon: String
     var color: Color
+    var isCompact: Bool = false
     var action: () -> Void
     var body: some View {
         Button(action: action) {
-            HStack {
-                Image(systemName: icon)
-                Text(title)
+            Group {
+                if isCompact {
+                    Image(systemName: icon)
+                        .font(.system(size: 14, weight: .bold))
+                        .frame(width: 28, height: 28)
+                } else {
+                    HStack {
+                        Image(systemName: icon)
+                        Text(title)
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                }
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
             .background(color.opacity(0.15)).foregroundColor(color).cornerRadius(8)
         }
         .buttonStyle(PlainButtonStyle())
+        .help(title)
     }
 }

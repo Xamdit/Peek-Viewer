@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Check if commit message is provided
+if [ -z "$1" ]; then
+    echo "❌ Error: Please provide a commit message."
+    echo "Usage: ./push \"your commit message\""
+    exit 1
+fi
+
+# Add all changes
+echo "📦 Staging changes..."
+git add .
+
+# Commit with the provided message
+echo "💾 Committing changes: $1"
+git commit -m "$1"
+
+# Push to origin
+echo "🚀 Pushing to origin..."
+git push
+
+echo "✅ Done!"

@@ -126,6 +126,14 @@ class DockerMonitor: ObservableObject {
         }
     }
     
+    func fetchLogs(containerId: String, completion: @escaping (String) -> Void) {
+        runDockerRaw(args: ["logs", "--tail", "100", containerId]) { output in
+            DispatchQueue.main.async {
+                completion(output)
+            }
+        }
+    }
+    
     private func runDockerRaw(args: [String], completion: @escaping (String) -> Void) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/local/bin/docker")
@@ -138,6 +146,7 @@ class DockerMonitor: ObservableObject {
         process.arguments = args
         let pipe = Pipe()
         process.standardOutput = pipe
+        process.standardError = pipe
         
         do {
             try process.run()

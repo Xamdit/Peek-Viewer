@@ -92,16 +92,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if window == nil {
             let contentView = DashboardView(monitor: self.dockerMonitor)
             window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 700, height: 450),
-                styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                contentRect: NSRect(x: 0, y: 0, width: 900, height: 550),
+                styleMask: [.titled, .closable, .fullSizeContentView],
                 backing: .buffered, defer: false)
-            window?.center()
             window?.setFrameAutosaveName("Dashboard Window")
             window?.contentView = NSHostingView(rootView: contentView)
             window?.title = "Peek Dashboard"
             window?.isReleasedWhenClosed = false
         }
         
+        window?.center()
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
