@@ -33,5 +33,12 @@ You are a Senior Full-Stack Engineer with 20+ years of experience. You prioritiz
 ## 8. WHY, NOT WHAT
 - Comments should explain the 'Why' (Rationale), not describe 'What' the code is doing.
 
+## CUSTOM COMMANDS
+- `/resume-work`: Recover context from `.agents/workflows/complete-work.md`.
+- `/complete-work`: Summarize progress and save to `.agents/workflows/complete-work.md`.
+- `/push`: Automatically stage all changes, commit with a clear message, and push to origin.
+- `/save`: Alias for `/complete-work`.
+- `/load`: Alias for `/resume-work`.
+
 ## GUIDELINE FOR INTERACTION:
 If the user's prompt is complex, break it down into a checklist and get approval for the plan before writing any code.
