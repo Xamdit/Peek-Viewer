@@ -18,9 +18,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateIcon(color: .labelColor) // Default color
         
         setupMenu()
+        setupMainMenu()
         
         // Automatically show widget on launch
         toggleWidget()
+    }
+
+    func setupMainMenu() {
+        let mainMenu = NSMenu()
+        let appMenuItem = NSMenuItem()
+        mainMenu.addItem(appMenuItem)
+        
+        let appMenu = NSMenu()
+        let quitItem = NSMenuItem(title: "Quit Peek", action: #selector(handleQuit), keyEquivalent: "q")
+        appMenu.addItem(quitItem)
+        
+        appMenuItem.submenu = appMenu
+        NSApp.mainMenu = mainMenu
     }
 
     func setupMenu() {
@@ -34,10 +48,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(handleQuit), keyEquivalent: "q")
         menu.addItem(quitItem)
         
         statusItem?.menu = menu
+    }
+    
+    @objc func handleQuit() {
+        if let win = window, win.isVisible && (win.isKeyWindow || win.isMainWindow) {
+            win.performClose(nil)
+        } else {
+            NSApplication.shared.terminate(nil)
+        }
     }
     
     @objc func toggleWidget() {
