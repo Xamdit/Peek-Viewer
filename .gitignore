@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+
+# Xcode
+build/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+*.xcscheme
+*.xcscmblueprint
+*.xccheckout
+*.xcbkptlist
+*.xcuserstate
+*.xcresult
+
+# XcodeGen
+# Since we use project.yml, the .xcodeproj is generated and should be ignored
+MenuBarApp.xcodeproj/
+Peek.xcodeproj/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+
+# Distribution
+dist/
+build_publish/
+
+# Logs
+*.log
+
+# Misc
+.temp/
+.cache/

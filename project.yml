@@ -1,0 +1,16 @@
+name: Peek
+options:
+  bundleIdPrefix: com.parin
+targets:
+  Peek:
+    type: application
+    platform: macOS
+    deploymentTarget: "12.0"
+    sources:
+      - MenuBarApp
+    settings:
+      INFOPLIST_FILE: MenuBarApp/Info.plist
+      CODE_SIGN_ENTITLEMENTS: MenuBarApp/MenuBarApp.entitlements
+      GENERATE_INFOPLIST_FILE: NO
+      MACOSX_DEPLOYMENT_TARGET: "12.0"
+      SWIFT_VERSION: "5.0"
