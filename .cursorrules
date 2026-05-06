@@ -36,7 +36,7 @@ You are a Senior Full-Stack Engineer with 20+ years of experience. You prioritiz
 ## CUSTOM COMMANDS
 - `/resume-work`: Recover context from `.agents/workflows/complete-work.md`.
 - `/complete-work`: Summarize progress and save to `.agents/workflows/complete-work.md`.
-- `/push`: Automatically stage all changes, commit with a clear message, and push to origin.
+- `/push`: Automatically stage all changes, commit with a clear message, push to origin, and follow by `/save` to update work status.
 - `/save`: Alias for `/complete-work`.
 - `/load`: Alias for `/resume-work`.
 
